@@ -42,8 +42,7 @@ jobs:
           message: "${{ steps.bump-semver.outputs.new_version }}: PR #${{ steps.get-merged-pull-request.outputs.number }} ${{ steps.get-merged-pull-request.outputs.title }}"
 
       - uses: actions/create-release@v1
-        # 패치 버전도 릴리스 해주기를 원할 경우 사용
-        # if: ${{ steps.release-label.outputs.level == 'major' || steps.release-label.outputs.level == 'minor' }}
+        if: ${{ steps.bump-semver.outputs.new_version != null }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
