@@ -5,49 +5,30 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/gitwub5/go_todo_app/config"
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Printf("need port number\n")
-		os.Exit(1)
-	}
-	p := os.Args[1]
-	l, err := net.Listen("tcp", ":"+p)
-	if err != nil {
-		log.Fatalf("failed to listen port %s: %v", p, err)
-	}
-	url := fmt.Sprintf("http://%s", l.Addr().String()) // l.Addr() 메서드로 네트워크 연결의 주소를 가져온다.
-	log.Printf("start with: %v", url)                  // 주소를 로그로 출력한다.
-	if err := run(context.Background(), l); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Printf("failed to terminated server: %v", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, l net.Listener) error {
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
-		}),
+func run(ctx context.Context) error {
+	cfg, err := config.New() // config.New 함수를 사용하여 설정을 초기화한다.
+	if err != nil {
+		return err
 	}
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		if err := s.Serve(l); err != nil &&
-			err != http.ErrServerClosed {
-			log.Printf("failed to close: %+v", err)
-			return err
-		}
-		return nil
-	})
-
-	<-ctx.Done()
-	if err := s.Shutdown(context.Background()); err != nil {
-		log.Printf("failed to shutdown: %+v", err)
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port)) // net.Listen 함수를 사용하여 TCP 네트워크에서 주소를 사용하여 네트워크 리스너를 생성한다.
+	if err != nil {
+		log.Fatalf("failed to listen port %d: %v", cfg.Port, err)
 	}
-	return eg.Wait()
+	url := fmt.Sprintf("http://%s", l.Addr().String())
+	log.Printf("start with: %v", url)
+	mux := NewMux()        // NewMux 함수를 사용하여 ServeHTTP 메서드를 구현한 http.Handler 인터페이스를 반환한다.
+	s := NewServer(l, mux) // NewServer 함수를 사용하여 서버를 생성한다.
+	return s.Run(ctx)      // Run 메서드를 사용하여 서버를 실행한다.
 }
