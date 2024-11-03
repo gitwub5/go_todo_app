@@ -1,0 +1,16 @@
+version: "3.9"  # Docker Compose 파일 버전 -> 최신 버전에서는 version 속성이 필요하지 않다. (삭제해도 무방)
+
+services:
+  app:
+    image: gotodo  # 사용할 Docker 이미지를 'gotodo'라는 이름으로 설정
+    build: 
+      context: .    # 빌드 컨텍스트 지정
+      args:
+        target: dev  # 빌드 시 사용할 대상을 'dev' 단계로 지정하여 개발 모드로 빌드
+    environment:  # 환경 변수 설정
+      TODO_ENV: dev  
+      PORT: 8080
+    volumes:
+      - .:/app  # 현재 디렉터리를 컨테이너 내 /app 디렉터리와 연결하여 파일 변경 시 바로 반영되도록 설정
+    ports:
+      - "18000:8080"  # 호스트의 18000 포트와 컨테이너의 8080 포트를 연결하여 외부에서 접근할 수 있도록 설정
