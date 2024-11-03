@@ -3,7 +3,7 @@
 
 DOCKER_TAG := latest
 build: ## 배포용 도커 이미지 빌드
-	docker build -t budougumi0617/gotodo:${DOCKER_TAG} \
+	docker build -t gitwub5/gotodo:${DOCKER_TAG} \
 		--target deploy ./
 
 build-local: ## 로컬 환경용 도커 이미지 빌드

@@ -11,15 +11,21 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func TestRun(t *testing.T) {
-	l, err := net.Listen("tcp", "localhost:0")
+// main_test.go를 server_test.go로 변경
+func TestServer_Run(t *testing.T) {
+	l, err := net.Listen("tcp", "localhost:0") // net.Listen 함수를 사용하여 TCP 서버를 생성한다.
 	if err != nil {
 		t.Fatalf("failed to listen port %v", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	eg, ctx := errgroup.WithContext(ctx)
+	mux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // mux 변수를 http.HandlerFunc로 변경
+		fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:]) // fmt.Fprintf 함수를 사용하여 응답을 작성한다.
+	})
+
 	eg.Go(func() error {
-		return run(ctx, l)
+		s := NewServer(l, mux) // NewServer 함수를 사용하여 서버를 생성한다.
+		return s.Run(ctx)      // Run 메서드를 사용하여 서버를 실행한다.
 	})
 	in := "message"
 	url := fmt.Sprintf("http://%s/%s", l.Addr().String(), in)
