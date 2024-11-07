@@ -23,8 +23,10 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM) // signal.NotifyContext 함수를 사용하여 시그널을 받아들이는 새로운 컨텍스트를 생성한다.
-	defer stop()                                                          // defer 키워드를 사용하여 stop 함수를 호출한다.
+	// signal.NotifyContext 함수를 사용하여 시그널을 받아들이는 새로운 컨텍스트를 생성한다.
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	// defer를 사용하여 stop 함수를 호출한다.
+	defer stop()
 
 	cfg, err := config.New()
 	if err != nil {

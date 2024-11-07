@@ -12,7 +12,8 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	t.Skip("리펙토링 중") // TestRun 함수의 컴파일 오류를 해결하기 위해 t.Skip 함수를 사용한다. (테스트 실행을 건너뛴다)
+	// TestRun 함수의 컴파일 오류를 해결하기 위해 t.Skip 함수를 사용한다. (테스트 실행을 건너뛴다)
+	t.Skip("리펙토링 중")
 
 	l, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
@@ -21,6 +22,7 @@ func TestRun(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
+		// (-) return run(ctx, l)
 		return run(ctx)
 	})
 	in := "message"

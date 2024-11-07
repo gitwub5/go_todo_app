@@ -19,12 +19,14 @@ func main() {
 	}
 }
 
+// (-) func run (ctx context.Context, l net.Listenr) error {
 func run(ctx context.Context) error {
 	cfg, err := config.New() // 환경 변수를 파싱하여 Config 구조체를 생성한다.
 	if err != nil {
 		return err
 	}
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port)) // Config 구조체의 포트 번호로 네트워크 리스너를 생성한다.
+	// Config 구조체의 포트 번호로 네트워크 리스너를 생성한다.
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		log.Fatalf("failed to listen port %d: %v", cfg.Port, err)
 	}
