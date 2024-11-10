@@ -18,3 +18,22 @@ refer to: https://github.com/budougumi0617/go_todo_app
 
 `Docker Compose`를 이용하여 API 서버, MySQL, Redis를 시작합니다.   
 주로 실행할 명령어는 `Makefile`에 사전에 정의되어 있습니다.
+
+## Makefile 명령어
+
+다음은 Makefile에 정의된 주로 실행할 수 있는 명령어 목록입니다:
+
+```bash
+$ make
+build                Build docker image to deploy
+build-local          Build docker image to local development
+up                   Do docker compose up with hot reload
+down                 Do docker compose down
+logs                 Tail docker compose logs
+ps                   Check container status
+test                 Execute tests
+dry-migrate          Try migration
+migrate              Execute migration
+generate             Generate codes
+help                 Show options
+```
