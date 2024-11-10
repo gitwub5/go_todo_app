@@ -21,7 +21,7 @@ type AddTask struct {
 	Validator *validator.Validate // validator.Validate 구조체를 사용하여 유효성 검사를 수행한다.
 }
 
-// ServeHTTP는 HTTP 요청을 처리하는 메서드로, AddTask 핸들러의 엔트리 포인트이다.
+// ServeHTTP는 HTTP 요청을 처리하는 메서드로, AddTask 핸들러의 엔트리 포인트이다. (POST /task)
 func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
