@@ -24,6 +24,13 @@ ps: ## 컨테이너 상태 확인
 test: ## 테스트 실행
 	go test -race -shuffle=on ./...
 
+dry-migrate: ## 마이그레이션 실행 전 미리보기
+	mysqldef -u todo -p todo -h 127.0.0.1 -P 33306 todo --dry-run < ./_tools/mysql/schema.sql
+
+migrate:  ## 마이그레이션 실행
+	mysqldef -u todo -p todo -h 127.0.0.1 -P 33306 todo < ./_tools/mysql/schema.sql
+
+
 help: ## 옵션 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
