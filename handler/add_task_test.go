@@ -2,12 +2,13 @@ package handler
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gitwub5/go_todo_app/entity"
-	"github.com/gitwub5/go_todo_app/store"
 	"github.com/gitwub5/go_todo_app/testutil"
 	"github.com/go-playground/validator/v10"
 )
@@ -24,7 +25,6 @@ func TestAddTask(t *testing.T) {
 		status  int
 		rspFile string
 	}
-	// 테스트 케이스 정의
 	tests := map[string]struct {
 		reqFile string
 		want    want
@@ -47,7 +47,7 @@ func TestAddTask(t *testing.T) {
 	for n, tt := range tests {
 		tt := tt
 		t.Run(n, func(t *testing.T) {
-			t.Parallel() // 테스트를 병렬로 실행한다.
+			t.Parallel()
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(
@@ -55,11 +55,18 @@ func TestAddTask(t *testing.T) {
 				"/tasks",
 				bytes.NewReader(testutil.LoadFile(t, tt.reqFile)),
 			)
+			moq := &AddTaskServiceMock{}
+			moq.AddTaskFunc = func(
+				ctx context.Context, title string,
+			) (*entity.Task, error) {
+				if tt.want.status == http.StatusOK {
+					return &entity.Task{ID: 1}, nil
+				}
+				return nil, errors.New("error from mock")
+			}
 
 			sut := AddTask{
-				Store: &store.TaskStore{
-					Tasks: map[entity.TaskID]*entity.Task{},
-				},
+				Service:   moq,
 				Validator: validator.New(),
 			}
 			sut.ServeHTTP(w, r)

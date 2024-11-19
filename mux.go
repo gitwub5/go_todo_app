@@ -7,6 +7,7 @@ import (
 	"github.com/gitwub5/go_todo_app/clock"
 	"github.com/gitwub5/go_todo_app/config"
 	"github.com/gitwub5/go_todo_app/handler"
+	"github.com/gitwub5/go_todo_app/service"
 	"github.com/gitwub5/go_todo_app/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -32,12 +33,17 @@ func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), erro
 	}
 	r := store.Repository{Clocker: clock.RealClocker{}}
 
-	// POST /tasks 요청을 처리하는 핸들러 등록
-	at := &handler.AddTask{DB: db, Repo: &r, Validator: v}
+	// POST /tasks 요청을 처리하는 핸들러 등록 (비즈니스 로직과 데이터베이스 처리를 분리)
+	at := &handler.AddTask{
+		Service:   &service.AddTask{DB: db, Repo: &r},
+		Validator: v,
+	}
 	mux.Post("/tasks", at.ServeHTTP)
 
-	// GET /tasks 요청 처리하는 핸들러 등록
-	lt := &handler.ListTask{DB: db, Repo: &r}
+	// GET /tasks 요청 처리하는 핸들러 등록 (비즈니스 로직과 데이터베이스 처리를 분리)
+	lt := &handler.ListTask{
+		Service: &service.ListTask{DB: db, Repo: &r},
+	}
 	mux.Get("/tasks", lt.ServeHTTP)
 
 	return mux, cleanup, nil
