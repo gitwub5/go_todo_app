@@ -12,7 +12,7 @@ import (
 
 func OpenDBForTest(t *testing.T) *sqlx.DB {
 	port := 33306
-	if _, defined := os.LookupEnv("CI"); defined {
+	if _, defined := os.LookupEnv("CI"); defined { // GitHub Actions에서 실행할 때
 		port = 3306
 	}
 	db, err := sql.Open(
