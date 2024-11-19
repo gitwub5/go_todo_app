@@ -55,15 +55,18 @@ func TestAddTask(t *testing.T) {
 				"/tasks",
 				bytes.NewReader(testutil.LoadFile(t, tt.reqFile)),
 			)
-			// AddTask 핸들러를 생성하고 ServeHTTP 메서드를 호출한다.
-			sut := AddTask{Store: &store.TaskStore{
-				Tasks: map[entity.TaskID]*entity.Task{},
-			}, Validator: validator.New()}
+
+			sut := AddTask{
+				Store: &store.TaskStore{
+					Tasks: map[entity.TaskID]*entity.Task{},
+				},
+				Validator: validator.New(),
+			}
 			sut.ServeHTTP(w, r)
 
 			resp := w.Result()
-			testutil.AssertResponse(t, // AssertResponse 함수를 사용하여 응답을 검증한다.
-				resp, tt.want.status, testutil.LoadFile(t, tt.want.rspFile), //LoadFile 함수를 사용해 파일을 읽어온다.
+			testutil.AssertResponse(t,
+				resp, tt.want.status, testutil.LoadFile(t, tt.want.rspFile),
 			)
 		})
 	}

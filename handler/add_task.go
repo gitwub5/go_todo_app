@@ -3,11 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/gitwub5/go_todo_app/entity"
 	"github.com/gitwub5/go_todo_app/store"
 	"github.com/go-playground/validator/v10"
+	"github.com/jmoiron/sqlx"
 )
 
 /*
@@ -17,7 +17,8 @@ import (
 
 // AddTask 구조체는 HTTP 요청을 처리하고 새로운 Task를 저장하는 핸들러이다.
 type AddTask struct {
-	Store     *store.TaskStore    // TaskStore는 Task 엔티티를 저장하기 위한 인터페이스이다.
+	DB        *sqlx.DB            // SQL 데이터베이스와 상호작용하기 위한 인터페이스
+	Repo      *store.Repository   // Task 저장소와 상호작용하기 위한 인터페이스
 	Validator *validator.Validate // validator.Validate 구조체를 사용하여 유효성 검사를 수행한다.
 }
 
@@ -38,8 +39,7 @@ func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 유효성 검사를 수행. Title 필드가 비어 있는 경우 에러가 반환된다.
-	err := validator.New().Struct(b)
-	if err != nil {
+	if err := at.Validator.Struct(b); err != nil {
 		RespondJSON(ctx, w, &ErrResponse{
 			Message: err.Error(),
 		}, http.StatusBadRequest)
@@ -48,11 +48,10 @@ func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Task를 생성하고 저장소에 추가한다.
 	t := &entity.Task{
-		Title:   b.Title,
-		Status:  "todo",
-		Created: time.Now(),
+		Title:  b.Title,
+		Status: entity.TaskStatusTodo,
 	}
-	id, err := store.Tasks.Add(t)
+	err := at.Repo.AddTask(ctx, at.DB, t)
 	if err != nil {
 		RespondJSON(ctx, w, &ErrResponse{
 			Message: err.Error(),
@@ -63,6 +62,6 @@ func (at *AddTask) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 성공 시 생성된 Task의 ID를 JSON 응답으로 반환한다.
 	rsp := struct {
 		ID int `json:"id"`
-	}{ID: int(id)}
+	}{ID: int(t.ID)}
 	RespondJSON(ctx, w, rsp, http.StatusOK)
 }

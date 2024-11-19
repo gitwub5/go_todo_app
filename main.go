@@ -28,7 +28,12 @@ func run(ctx context.Context) error {
 	}
 	url := fmt.Sprintf("http://%s", l.Addr().String())
 	log.Printf("start with: %v", url)
-	mux := NewMux()        // NewMux 함수를 사용하여 ServeHTTP 메서드를 구현한 http.Handler 인터페이스를 반환한다.
+	mux, cleanup, err := NewMux(ctx, cfg) // NewMux 함수를 사용하여 라우터를 생성한다.
+	// 오류가 반환돼도 cleanup 함수는 호출된다.
+	defer cleanup()
+	if err != nil {
+		return err
+	}
 	s := NewServer(l, mux) // NewServer 함수를 사용하여 서버를 생성한다.
 	return s.Run(ctx)      // Run 메서드를 사용하여 서버를 실행한다.
 }

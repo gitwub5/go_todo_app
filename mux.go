@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/gitwub5/go_todo_app/clock"
+	"github.com/gitwub5/go_todo_app/config"
 	"github.com/gitwub5/go_todo_app/handler"
 	"github.com/gitwub5/go_todo_app/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 )
 
-// 유연한 라우팅을 위해 go-chi/chi 패키지를 사용하여 라우터를 생성하도록 변경
-func NewMux() http.Handler {
+// context.Context와 *config.Config를 인자로 받고, http.Handler와 cleanup 함수를 반환
+func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), error) {
 	mux := chi.NewRouter()
 
 	// /health 요청을 처리하는 핸들러 등록
@@ -19,19 +22,23 @@ func NewMux() http.Handler {
 		_, _ = w.Write([]byte(`{"status": "ok"}`))
 	})
 
+	// 유효성 검사기 생성
 	v := validator.New()
 
-	// /tasks 엔드포인트를 처리하는 AddTask 핸들러 등록
-	mux.Handle("/tasks", &handler.AddTask{Store: store.Tasks, Validator: v})
+	// 데이터베이스 연결 및 정리 함수 생성
+	db, cleanup, err := store.New(ctx, cfg)
+	if err != nil {
+		return nil, cleanup, err
+	}
+	r := store.Repository{Clocker: clock.RealClocker{}}
 
 	// POST /tasks 요청을 처리하는 핸들러 등록
-	at := &handler.AddTask{Store: store.Tasks, Validator: v}
+	at := &handler.AddTask{DB: db, Repo: &r, Validator: v}
 	mux.Post("/tasks", at.ServeHTTP)
 
-	// GET /tasks 요청을 처리하는 핸들러 등록
-	lt := &handler.ListTask{Store: store.Tasks}
+	// GET /tasks 요청 처리하는 핸들러 등록
+	lt := &handler.ListTask{DB: db, Repo: &r}
 	mux.Get("/tasks", lt.ServeHTTP)
 
-	// 설정된 라우터를 반환
-	return mux
+	return mux, cleanup, nil
 }
