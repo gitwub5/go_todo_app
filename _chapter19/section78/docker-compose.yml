@@ -1,0 +1,39 @@
+version: "3.9"
+# ref: https://docs.docker.com/compose/compose-file
+services:
+  app:
+    image: gotodo 
+    build: 
+      context: .    # 빌드 컨텍스트 지정
+      args:
+        target: dev  
+    environment:  # 환경 변수 설정
+      TODO_ENV: dev  
+      PORT: 8080
+      TODO_DB_HOST: todo-db # MYSQL 환경 변수 설정
+      TODO_DB_PORT: 3306
+      TODO_DB_USER: todo
+      TODO_DB_PASSWORD: todo
+      TODO_DB_NAME: todo
+    volumes:
+      - .:/app 
+    ports:
+      - "18000:8080"  
+    links: # 서비스 간 연결 설정
+      - todo-db
+  todo-db:
+    image: mysql:8.0.29
+    # platform: linux/amd64 # 플랫폼 지정 -> 맥북(ARM) 또는 ARM 사용자의 경우 platform 옵션 제거 (호환성 및 성능 저하 문제 발생 가능)
+    container_name: todo-db
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_USER: todo
+      MYSQL_PASSWORD: todo
+      MYSQL_DATABASE: todo
+    volumes:
+      - todo-db-data:/var/lib/mysql
+      - $PWD/_tools/mysql/conf.d:/etc/mysql/conf.d:cached
+    ports:
+      - "33306:3306"
+volumes: 
+  todo-db-data:
