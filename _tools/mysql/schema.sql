@@ -13,6 +13,7 @@ CREATE TABLE `user`
 CREATE TABLE `task`
 (
     `id`       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '태스크 식별자',
+    `user_id`  BIGINT UNSIGNED NOT NULL COMMENT '사용자 식별자',
     `title`    VARCHAR(128) NOT NULL COMMENT '태스크 타이틀',
     `status`   VARCHAR(20)  NOT NULL COMMENT '태스크 상태',
     `created`  DATETIME(6) NOT NULL COMMENT '레코드 작성 시간',
