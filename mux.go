@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gitwub5/go_todo_app/auth"
 	"github.com/gitwub5/go_todo_app/clock"
 	"github.com/gitwub5/go_todo_app/config"
 	"github.com/gitwub5/go_todo_app/handler"
@@ -31,7 +32,31 @@ func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), erro
 	if err != nil {
 		return nil, cleanup, err
 	}
-	r := store.Repository{Clocker: clock.RealClocker{}}
+
+	// 실제 시간 시계 사용하여 Repository를 생성
+	clocker := clock.RealClocker{}
+	r := store.Repository{Clocker: clocker}
+	// Redis 클라이언트 생성
+	rcli, err := store.NewKVS(ctx, cfg)
+	if err != nil {
+		return nil, cleanup, err
+	}
+	// JWTer 생성
+	jwter, err := auth.NewJWTer(rcli, clocker)
+	if err != nil {
+		return nil, cleanup, err
+	}
+
+	l := &handler.Login{
+		Service: &service.Login{
+			DB:             db,
+			Repo:           &r,
+			TokenGenerator: jwter,
+		},
+		Validator: v,
+	}
+
+	mux.Post("/login", l.ServeHTTP)
 
 	// POST /tasks 요청을 처리하는 핸들러 등록 (비즈니스 로직과 데이터베이스 처리를 분리)
 	at := &handler.AddTask{

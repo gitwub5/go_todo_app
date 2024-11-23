@@ -14,7 +14,7 @@ import (
 Redis를 사용해 액세스 토큰을 관리하는 키-값 저장소
 */
 
-// 새로운 KVS를 생성한다.
+// 새로운 Redis 클라이언트를 생성한다.
 func NewKVS(ctx context.Context, cfg *config.Config) (*KVS, error) {
 	cli := redis.NewClient(&redis.Options{
 		Addr: fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),

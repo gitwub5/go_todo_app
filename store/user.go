@@ -9,6 +9,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+// 유저 회원가입
 func (r *Repository) RegisterUser(ctx context.Context, db Execer, u *entity.User) error {
 	u.Created = r.Clocker.Now()
 	u.Modified = r.Clocker.Now()
@@ -29,4 +30,18 @@ func (r *Repository) RegisterUser(ctx context.Context, db Execer, u *entity.User
 	}
 	u.ID = entity.UserID(id)
 	return nil
+}
+
+// 유저 정보 가져오기
+func (r *Repository) GetUser(
+	ctx context.Context, db Queryer, name string,
+) (*entity.User, error) {
+	u := &entity.User{}
+	sql := `SELECT
+		id, name, password, role, created, modified 
+		FROM user WHERE name = ?`
+	if err := db.GetContext(ctx, u, sql, name); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
