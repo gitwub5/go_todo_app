@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gitwub5/go_todo_app/auth"
 	"github.com/gitwub5/go_todo_app/clock"
 	"github.com/gitwub5/go_todo_app/config"
 	"github.com/gitwub5/go_todo_app/handler"
@@ -31,20 +32,20 @@ func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), erro
 	if err != nil {
 		return nil, cleanup, err
 	}
-	r := store.Repository{Clocker: clock.RealClocker{}}
 
-	// POST /tasks 요청을 처리하는 핸들러 등록 (비즈니스 로직과 데이터베이스 처리를 분리)
-	at := &handler.AddTask{
-		Service:   &service.AddTask{DB: db, Repo: &r},
-		Validator: v,
+	// 실제 시간 시계 사용하여 Repository를 생성
+	clocker := clock.RealClocker{}
+	r := store.Repository{Clocker: clocker}
+	// Redis 클라이언트 생성
+	rcli, err := store.NewKVS(ctx, cfg)
+	if err != nil {
+		return nil, cleanup, err
 	}
-	mux.Post("/tasks", at.ServeHTTP)
-
-	// GET /tasks 요청 처리하는 핸들러 등록 (비즈니스 로직과 데이터베이스 처리를 분리)
-	lt := &handler.ListTask{
-		Service: &service.ListTask{DB: db, Repo: &r},
+	// JWTer 생성
+	jwter, err := auth.NewJWTer(rcli, clocker)
+	if err != nil {
+		return nil, cleanup, err
 	}
-	mux.Get("/tasks", lt.ServeHTTP)
 
 	// POST /register 요청을 처리하는 핸들러 등록
 	ru := &handler.RegisterUser{
@@ -52,6 +53,42 @@ func NewMux(ctx context.Context, cfg *config.Config) (http.Handler, func(), erro
 		Validator: v,
 	}
 	mux.Post("/register", ru.ServeHTTP)
+
+	// POST /login 요청을 처리하는 핸들러 등록
+	l := &handler.Login{
+		Service: &service.Login{
+			DB:             db,
+			Repo:           &r,
+			TokenGenerator: jwter,
+		},
+		Validator: v,
+	}
+	mux.Post("/login", l.ServeHTTP)
+
+	// POST /tasks 요청을 처리하는 핸들러
+	at := &handler.AddTask{
+		Service:   &service.AddTask{DB: db, Repo: &r},
+		Validator: v,
+	}
+	// GET /tasks 요청 처리하는 핸들러
+	lt := &handler.ListTask{
+		Service: &service.ListTask{DB: db, Repo: &r},
+	}
+
+	mux.Route("/tasks", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwter)) // /tasks 하위 모든 요청에 대해 인증 미들웨어 적용
+		r.Post("/", at.ServeHTTP)            // POST /tasks 요청을 처리하는 핸들러 등록
+		r.Get("/", lt.ServeHTTP)             // GET /tasks 요청 처리하는 핸들러 등록
+	})
+
+	// /admin 권한 사용자만 접속할 수 있는 엔드포인트
+	mux.Route("/admin", func(r chi.Router) {
+		r.Use(handler.AuthMiddleware(jwter), handler.AdminMiddleware)
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			_, _ = w.Write([]byte(`{"message": "admin only"}`))
+		})
+	})
 
 	return mux, cleanup, nil
 }
